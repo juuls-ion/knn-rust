@@ -71,7 +71,6 @@ fn grid_to_csv(grid: &[[u8; GRID_SIZE]; GRID_SIZE]) -> Result<(), Box<dyn Error>
 }
 
 
-
 fn main() {
     // initialise grid with GRID_SIZE 0s per dimensions
     let mut grid: [[u8; GRID_SIZE]; GRID_SIZE] =
@@ -113,7 +112,7 @@ fn main() {
              */
             let sum = data[indexes[0]].label + data[indexes[1]].label + data[indexes[2]].label;
             // each grid coordinate is stored as the correct label
-            grid[row][column] = if sum >= 2 {1} else {0}
+            grid[row][column] = if sum >= 2 {1} else {0};
 
         }
     }
