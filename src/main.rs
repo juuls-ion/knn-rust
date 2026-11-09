@@ -1,5 +1,7 @@
+use std::error::Error;
+
 const NUMBER_OF_POINTS: usize = 100;
-const GRID_SIZE: usize = 100;
+const GRID_SIZE: usize = 500;
 
 // create datatype for (y_i, x_i)
 struct Centre {
@@ -21,7 +23,7 @@ fn create_point() -> Centre {
 
 // create array S of {(y_1, x_1), (y_2, x_2)...}
 fn create_data() -> [Centre; NUMBER_OF_POINTS] {
-    let array: [Centre; 100] = 
+    let array: [Centre; NUMBER_OF_POINTS] = 
         // calls create_point() for each array index
         std::array::from_fn(|_| create_point());
     array
@@ -36,12 +38,38 @@ fn find_distance(coordinate: &[f64; 2], data_point: &Centre) -> f64 {
         (data_point.coordinates[1] - coordinate[1]).powi(2) 
 }
 
-// returns correct label for each coordinate
-fn classify_point(distances: &[(f64, usize)], data: &[Centre]) -> u8 {
-    let indexes = [distances[0].1, distances[1].1, distances[2].1];
-    let sum = data[indexes[0]].label + data[indexes[1]].label + data[indexes[2]].label;
-    if sum >= 1 {1} else {0}
+fn points_to_csv(data: &[Centre]) -> Result<(), Box<dyn Error>> {
+    let mut writer = csv::Writer::from_path("points.csv")?;
+
+    // csv column headings
+    writer.write_record(["label", "x1", "x2"])?;
+
+    // write each point
+    for point in data {
+        writer.write_record([
+            point.label.to_string(),
+            point.coordinates[0].to_string(),
+            point.coordinates[1].to_string(),
+        ])?;
+    }
+
+    // data still buffered in memory is written to the CSV
+    writer.flush()?;
+    Ok(())
 }
+
+fn grid_to_csv(grid: &[[u8; GRID_SIZE]; GRID_SIZE]) -> Result<(), Box<dyn Error>> {
+    let mut writer = csv::Writer::from_path("grid.csv")?;
+
+    for row in grid {
+        writer.serialize(row.as_slice())?;
+    }
+
+    // data still buffered in memory is written to the CSV
+    writer.flush()?;
+    Ok(())
+}
+
 
 
 fn main() {
@@ -89,6 +117,9 @@ fn main() {
 
         }
     }
+
+    points_to_csv(&data).unwrap();
+    grid_to_csv(&grid).unwrap();
 
 
 }
