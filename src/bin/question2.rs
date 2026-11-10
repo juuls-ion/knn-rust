@@ -38,7 +38,11 @@ fn find_distance(p1: &Centre, p2: &Centre) -> f64 {
         (p1.coordinates[1] - p2.coordinates[1]).powi(2) 
 }
 
-// 
+/*
+noisy data generation:
+ - classify given 'data' against 'neighbours' -> original 100 centres
+ - with k = 3, then apply 80/20 noise rule
+*/
 fn noisy_knn(neighbours: &Vec<Centre>, mut data: Vec<Centre>) -> Vec<Centre> {
     // want to classify each point in 'data' according to knn in 'neighbours'
     // start with distances from point in data to all neighbours
@@ -69,13 +73,53 @@ fn noisy_knn(neighbours: &Vec<Centre>, mut data: Vec<Centre>) -> Vec<Centre> {
                 */
             let sum = neighbours[indexes[0]].label + neighbours[indexes[1]].label + neighbours[indexes[2]].label;
             // each datapoint's label is correctly updated with 80% probability
-            data[datapoint].label = if sum >= 2 {1} else {0}
+            data[datapoint].label = if sum >= 2 {1} else {0};
         } else {
             // datapoint's label randomly assigned with 20% probability
             data[datapoint].label = rand::random_range(0..=1);
         } 
     }
     data
+}
+
+fn eval_knn(test_data: &Vec<Centre>, train_data: &Vec<Centre>, k: usize) -> Vec<usize> {
+    let mut output_labels: Vec<usize> = Vec::new();
+    
+    // finding nn for all datapoints in test data
+    for test_point in 0..test_data.len() {
+        // vector of distances from one data point to all neighbours
+        // each tuple contains float for distance, int for train_point index
+        let mut distances: Vec<(f64, usize)> = Vec::new();
+
+        // populate vector of distances with distance between current test point
+        // and all training points
+        for neighbour in 0..train_data.len() {
+            let v = (find_distance(&test_data[test_point], &train_data[neighbour]), neighbour);
+            distances.push(v);
+        }
+
+        // upack (distance, index) tuple and sort by distances
+        distances.sort_by(|a, b| a.0.total_cmp(&b.0));
+        
+        // extract index from tuple of (distance, index) for each point
+        let mut sum: usize = 0;
+        // collect only k closest neighbours
+        for neighbour in 0..k {
+            // access label of training datapoint
+            // distances.neighbour is a tuple with (distance, train_datapoint index)
+            sum += train_data[distances[neighbour].1].label as usize;
+        }
+
+        // if the majority of nn labels are one then the point's label is 1
+        let label = if 2 * sum > k {
+                1
+            } else if 2 * sum < k {
+                0
+            } else {rand::random_range(0..=1)}; // if draw, randomly assign label
+
+        output_labels.push(label);
+    }
+    output_labels
 }
 
 fn main() {
@@ -88,6 +132,8 @@ fn main() {
     let train_data = noisy_knn(&centres, train_data);
     let test_data = noisy_knn(&centres, test_data);
 
-    
+    // one iteration, k = k_i
+    let k_i: usize = 1;
+    let predicted_test_labels = eval_knn(&test_data, &train_data, k_i);
 }
 
