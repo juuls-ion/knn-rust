@@ -39,7 +39,7 @@ fn find_distance(coordinate: &[f64; 2], data_point: &Centre) -> f64 {
 }
 
 fn points_to_csv(data: &[Centre]) -> Result<(), Box<dyn Error>> {
-    let mut writer = csv::Writer::from_path("output/q1/points.csv")?;
+    let mut writer = csv::Writer::from_path("output/part1/points.csv")?;
 
     // csv column headings
     writer.write_record(["label", "x1", "x2"])?;
@@ -59,7 +59,7 @@ fn points_to_csv(data: &[Centre]) -> Result<(), Box<dyn Error>> {
 }
 
 fn grid_to_csv(grid: &[[u8; GRID_SIZE]; GRID_SIZE]) -> Result<(), Box<dyn Error>> {
-    let mut writer = csv::Writer::from_path("output/q1/grid.csv")?;
+    let mut writer = csv::Writer::from_path("output/part1/grid.csv")?;
 
     for row in grid {
         writer.serialize(row.as_slice())?;

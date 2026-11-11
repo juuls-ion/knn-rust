@@ -1,3 +1,5 @@
+use std::error::Error;
+
 const NUMBER_OF_CENTRES: usize = 100;
 const NUMBER_OF_TRAINING_POINTS: usize = 4000;
 const NUMBER_OF_TEST_POINTS: usize = 1000;
@@ -82,6 +84,7 @@ fn noisy_knn(neighbours: &Vec<Centre>, mut data: Vec<Centre>) -> Vec<Centre> {
     data
 }
 
+// returns a vector of prediceted labels for each test point
 fn eval_knn(test_data: &Vec<Centre>, train_data: &Vec<Centre>, k: usize) -> Vec<usize> {
     let mut output_labels: Vec<usize> = Vec::new();
     
@@ -122,18 +125,57 @@ fn eval_knn(test_data: &Vec<Centre>, train_data: &Vec<Centre>, k: usize) -> Vec<
     output_labels
 }
 
+fn classification_error_rate(test_data: &Vec<Centre>, predicted_test_labels: &Vec<usize>) -> f64 {
+    let mut total_error = 0;
+    for test_point in 0..test_data.len() {
+        // if labels dont match
+        if test_data[test_point].label != predicted_test_labels[test_point] as u8 {total_error +=1}
+    };
+    total_error as f64 / NUMBER_OF_TEST_POINTS as f64
+}
+
+fn data_to_csv(data: &[(usize, f64); 49]) -> Result<(), Box<dyn Error>> {
+    let mut writer = csv::Writer::from_path("output/part2/error.csv")?;
+
+    // csv column headings
+    writer.write_record(["k", "error"])?;
+
+    // write each point
+    for point in data {
+        writer.write_record([
+            point.0.to_string(),
+            point.1.to_string(),
+        ])?;
+    }
+
+    // data still buffered in memory is written to the CSV
+    writer.flush()?;
+    Ok(())
+}
+
 fn main() {
-    let centres: Vec<Centre> = create_data(NUMBER_OF_CENTRES);
-    // test, train data initialised with random labels
-    let train_data: Vec<Centre> = create_data(NUMBER_OF_TRAINING_POINTS);
-    let test_data: Vec<Centre> = create_data(NUMBER_OF_TEST_POINTS);
+    // initialise array to hold final outputs
+    let mut error_per_k = [(0, 0.0); 49];
+    for k in 1..=49 {
+        let mut generalisation_error = 0.0;
+        for _ in 0..100 {
+            // initialise random hypothesis
+            let centres: Vec<Centre> = create_data(NUMBER_OF_CENTRES);
+            // test, train data initialised with random labels
+            let train_data: Vec<Centre> = create_data(NUMBER_OF_TRAINING_POINTS);
+            let test_data: Vec<Centre> = create_data(NUMBER_OF_TEST_POINTS);
 
-    // assign labels to training, test data according to protocol A
-    let train_data = noisy_knn(&centres, train_data);
-    let test_data = noisy_knn(&centres, test_data);
+            // assign labels to training, test data according to protocol A
+            let train_data = noisy_knn(&centres, train_data);
+            let test_data = noisy_knn(&centres, test_data);
 
-    // one iteration, k = k_i
-    let k_i: usize = 1;
-    let predicted_test_labels = eval_knn(&test_data, &train_data, k_i);
+            let predicted_test_labels = eval_knn(&test_data, &train_data, k);
+            // increment error sum with the error rate from this run
+            generalisation_error += classification_error_rate(&test_data, &predicted_test_labels);
+        }
+        // arrays are 0 indexed but k starts at 1
+        error_per_k[k-1] = (k, generalisation_error / 100.0);
+    }
+    data_to_csv(&error_per_k).unwrap();
 }
 
