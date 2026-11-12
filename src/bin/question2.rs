@@ -165,7 +165,7 @@ fn main() {
             let train_data: Vec<Centre> = create_data(NUMBER_OF_TRAINING_POINTS);
             let test_data: Vec<Centre> = create_data(NUMBER_OF_TEST_POINTS);
 
-            // assign labels to training, test data according to protocol A
+            // assign labels to training, test data with 80/20 split
             let train_data = noisy_knn(&centres, train_data);
             let test_data = noisy_knn(&centres, test_data);
 
